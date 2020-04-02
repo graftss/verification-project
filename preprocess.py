@@ -1,4 +1,5 @@
 import os
+import scipy.stats
 
 # combines the elements in a list of lists, into a single list
 def combine_lists(list_of_lists):
@@ -7,6 +8,15 @@ def combine_lists(list_of_lists):
 # list paths of all CSV files in the `datasets` directory
 def all_dataset_paths():
   return ['datasets/' + path for path in os.listdir('datasets') if path.endswith('.csv')]
+
+csv_header = 'name,version,name,wmc,dit,noc,cbo,rfc,lcom,ca,ce,npm,lcom3,loc,dam,moa,mfa,cam,ic,cbm,amc,max_cc,avg_cc,bug'
+
+csv_key_list = csv_header.split(',')
+
+bug_index = csv_key_list.index('bug')
+
+def get_metric_indices():
+  return range(3, 23)
 
 # read and parse a CSV file in the `data` directory
 def parse_dataset(path):
@@ -60,11 +70,40 @@ def remove_duplicates(dataset):
   for idx in dupe_indices:
     del dataset[idx]
 
+def binaryify_bug_counts(dataset):
+  for entry in dataset:
+    entry[bug_index] = '0' if entry[bug_index] == '0' else '1'
+
+# finds metrics that are uncorrelated with bug count, and removes them
+# from the dataset.
+def remove_uncorrelated_metrics(dataset):
+  uncorrelated_indices = []
+  bug_counts = [int(entry[csv_key_list.index('bug')]) for entry in dataset]
+
+  for index in get_metric_indices():
+    metric_values = [float(entry[index]) for entry in dataset]
+    (coeff, p_value) = scipy.stats.pearsonr(metric_values, bug_counts)
+
+    if p_value > 0.0001:
+      uncorrelated_indices.append(index)
+
+  # make sure the indices are in descending order, so they can be deleted
+  uncorrelated_indices.sort()
+  uncorrelated_indices.reverse()
+
+  for entry in dataset:
+    for index in uncorrelated_indices:
+      del entry[index]
+
+  # update csv key list and header
+  for index in uncorrelated_indices:
+    del csv_key_list[index]
+    csv_header = ','.join(csv_key_list)
+
 # writes `dataset` as a CSV into `path`
 def write_dataset(path, dataset):
   with open(path, 'w') as out:
-    # write the field header line manually
-    out.write('name,version,name,wmc,dit,noc,cbo,rfc,lcom,ca,ce,npm,lcom3,loc,dam,moa,mfa,cam,ic,cbm,amc,max_cc,avg_cc,bug\n')
+    out.write(csv_header + '\n')
     for entry in dataset:
       out.write(','.join(entry) + '\n')
 
@@ -79,8 +118,17 @@ def main():
   for k, group in grouped.items():
     remove_duplicates(group)
 
-  validated = combine_lists(grouped.values())
-  write_dataset('combined.csv', validated)
+  # recombine the groups, which are now duplicate-free, into
+  # a single combined and validated dataset
+  combined = combine_lists(grouped.values())
+
+  # transform bug counts into a 0/1 value
+  binaryify_bug_counts(combined)
+
+  # remove metrics that don't correlate with bug count from the dataset
+  remove_uncorrelated_metrics(combined)
+
+  write_dataset('combined.csv', combined)
 
 if __name__ == '__main__':
   main()
