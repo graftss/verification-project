@@ -64,7 +64,7 @@ def remove_duplicates(dataset):
 def write_dataset(path, dataset):
   with open(path, 'w') as out:
     # write the field header line manually
-    out.write('name,version,name,wmc,dit,noc,cbo,rfc,lcom,ca,ce,npm,lcom3,loc,dam,moa,mfa,cam,ic,cbm,amc,max_cc,avg_cc,bug')
+    out.write('name,version,name,wmc,dit,noc,cbo,rfc,lcom,ca,ce,npm,lcom3,loc,dam,moa,mfa,cam,ic,cbm,amc,max_cc,avg_cc,bug\n')
     for entry in dataset:
       out.write(','.join(entry) + '\n')
 
