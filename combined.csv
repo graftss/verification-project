@@ -1,4 +1,4 @@
-name,version,name,wmc,dit,noc,cbo,rfc,lcom,ca,ce,npm,lcom3,loc,dam,moa,mfa,cam,ic,cbm,amc,max_cc,avg_cc,bug
+name,version,name,wmc,cbo,rfc,lcom,ca,ce,npm,lcom3,loc,dam,moa,cam,max_cc,avg_cc,bug
 Tomcat,6.0.389418,org.apache.catalina.connector.Request,131,79,311,6643,51,0,120,0.95625,2701,1,17,0.073461538,22,2.2366,1
 Tomcat,6.0.389418,org.apache.tomcat.util.digester.Digester,130,64,270,6759,56,0,123,0.915503876,2700,1,6,0.069232825,8,1.2692,0
 ArcPlatform,1,pl.arcilook.domain.others.Information,24,9,33,238,7,2,24,0.966555184,166,0.846153846,2,0.182291667,6,1.2083,0

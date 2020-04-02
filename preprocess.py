@@ -77,6 +77,7 @@ def binaryify_bug_counts(dataset):
 # finds metrics that are uncorrelated with bug count, and removes them
 # from the dataset.
 def remove_uncorrelated_metrics(dataset):
+  global csv_header, csv_key_list
   uncorrelated_indices = []
   bug_counts = [int(entry[csv_key_list.index('bug')]) for entry in dataset]
 
@@ -98,7 +99,7 @@ def remove_uncorrelated_metrics(dataset):
   # update csv key list and header
   for index in uncorrelated_indices:
     del csv_key_list[index]
-    csv_header = ','.join(csv_key_list)
+  csv_header = ','.join(csv_key_list)
 
 # writes `dataset` as a CSV into `path`
 def write_dataset(path, dataset):
