@@ -13,11 +13,22 @@ class Experiments {
   static final String datasetPath = "./combined.arff";
 
   public static void main(String[] args) throws Exception {
-    SplitDataset data = splitDatasetOnProjectName("Berek");
-    J48 classifier = new J48();
+    Classifier classifier;
+    Evaluation eval;
+    Instances dataset;
+    SplitDataset data;
 
-    // runExperiment(classifier, data);
-    // runCrossValidationExperiment(classifier);
+    // experiment 1: trained on Berek project, validated on the rest of the data
+    data = splitDatasetOnProjectName("Berek");
+    classifier = new J48();
+    eval = runExperiment(classifier, data);
+    printEvaluation(eval);
+
+    // experiment 2: 10-fold cross validation on entire dataset
+    classifier = new J48();
+    dataset = (new Dataset(datasetPath)).fullDataset();
+    eval = runCrossValidationExperiment(classifier, dataset);
+    printEvaluation(eval);
   }
 
   public static SplitDataset splitDatasetOnProjectName(String projectName) {
@@ -38,17 +49,23 @@ class Experiments {
   }
 
   // evaluates the given classifier using 10 times 10-fold cross-validation
-  public static void runCrossValidationExperiment(Classifier classifier, Instances data) throws Exception {
+  public static Evaluation runCrossValidationExperiment(Classifier classifier, Instances data) throws Exception {
     Evaluation eval = new Evaluation(data);
     eval.crossValidateModel(classifier, data, 10, new Random(1));
+    return eval;
   }
 
   // evaluates the given classifier using the given training and evaluation datasets
-  public static void runExperiment(Classifier classifier, SplitDataset data) throws Exception {
+  public static Evaluation runExperiment(Classifier classifier, SplitDataset data) throws Exception {
     classifier.buildClassifier(data.training);
     Evaluation eval = new Evaluation(data.training);
     eval.evaluateModel(classifier, data.validation);
-    System.out.println(eval.toSummaryString("\nResults\n======\n", false));
+    return eval;
+  }
+
+  public static void printEvaluation(Evaluation eval) {
+    String str = eval.toSummaryString("\nResults\n======\n", false);
+    System.out.println(str);
   }
 
   // responsible for loading and fetching instances from our ARFF dataset
@@ -78,6 +95,16 @@ class Experiments {
 
     public Instances emptyInstances() {
       return new Instances(structure);
+    }
+
+    public Instances fullDataset() {
+      try {
+        Instances dataset = loader.getDataSet();
+        dataset.setClassIndex(dataset.numAttributes() - 1);
+        return dataset;
+      } catch (Exception e) {
+        return null;
+      }
     }
   }
 
