@@ -1,2 +1,2 @@
-javac -cp ~/classpath Experiments.java
-java -cp ~/classpath:. Experiments
+javac -cp ./lib Experiments.java
+java -cp ./lib:. Experiments
