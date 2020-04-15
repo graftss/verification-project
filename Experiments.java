@@ -6,6 +6,17 @@ import weka.classifiers.Evaluation;
 import weka.classifiers.Classifier;
 import weka.classifiers.bayes.NaiveBayes;
 import weka.classifiers.bayes.BayesianLogisticRegression;
+import weka.classifiers.functions.MLPClassifier;
+import weka.classifiers.functions.SGD;
+import weka.classifiers.functions.SMO;
+import weka.classifiers.functions.VotedPerceptron;
+import weka.classifiers.meta.AttributeSelectedClassifier;
+import weka.classifiers.meta.LogitBoost;
+import weka.classifiers.meta.ClassificationViaRegression;
+import weka.classifiers.trees.DecisionStump;
+import weka.classifiers.trees.RandomForest;
+import weka.classifiers.trees.RandomTree;
+import weka.classifiers.trees.REPTree;
 
 import java.io.File;
 import java.util.Enumeration;
@@ -38,9 +49,21 @@ class Experiments {
 
   public static void runInitialExperiments() {
     List<Classifier> classifiers = new ArrayList<Classifier>();
-    classifiers.add(new NaiveBayes());
     // classifiers.add(new LibSVM()); <-- can't find one of the dependencies online
-    classifiers.add(new BayesianLogisticRegression());
+    // classifiers.add(new ClassificationViaRegression()); <-- doesn't work
+
+    // classifiers.add(new NaiveBayes());
+    // classifiers.add(new BayesianLogisticRegression());
+    // classifiers.add(new MLPClassifier());
+    // classifiers.add(new SGD());
+    // classifiers.add(new SMO());
+    // classifiers.add(new VotedPerceptron());
+    // classifiers.add(new AttributeSelectedClassifier());
+    // classifiers.add(new LogitBoost());
+    // classifiers.add(new DecisionStump());
+    // classifiers.add(new RandomForest());
+    // classifiers.add(new RandomTree());
+    // classifiers.add(new REPTree());
 
     classifiers.forEach(classifier -> {
       Evaluation eval = runCrossValidationExperiment(classifier);
