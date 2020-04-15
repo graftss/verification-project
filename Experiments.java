@@ -108,11 +108,13 @@ class Experiments {
 
     // separate the dataset into training and validation subsets, based
     // on the value of the 0-index attribute (which is project name)
-    Instances nextTarget;
     Instance instance;
     while ((instance = dataset.getNextInstance()) != null) {
-      nextTarget = instance.stringValue(0).equals(projectName) ? training : validation;
-      nextTarget.add(instance);
+      validation.add(instance);
+
+      if (instance.stringValue(0).equals(projectName)) {
+        training.add(instance);
+      }
     }
 
     // delete project name attributes
