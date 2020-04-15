@@ -6,6 +6,7 @@ import weka.classifiers.Evaluation;
 import weka.classifiers.Classifier;
 import weka.classifiers.bayes.NaiveBayes;
 import weka.classifiers.bayes.BayesianLogisticRegression;
+import weka.classifiers.functions.Logistic;
 import weka.classifiers.functions.MLPClassifier;
 import weka.classifiers.functions.SGD;
 import weka.classifiers.functions.SMO;
@@ -23,11 +24,13 @@ import java.util.Enumeration;
 import java.util.Random;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 class Experiments {
   static final String datasetPath = "./combined.arff";
 
   public static void main(String[] args) throws Exception {
+    List<ExperimentResult> results = new ArrayList<ExperimentResult>();
     Classifier classifier;
     Evaluation eval;
     Instances dataset;
@@ -44,32 +47,58 @@ class Experiments {
     // eval = runCrossValidationExperiment(classifier, dataset);
     // printEvaluation(eval);
 
-    runInitialExperiments();
+    // results.addAll(runFullDatasetExperiments());
+    results.addAll(runSingleProjectTrainedExperiments());
+
+    results.forEach(r -> r.print());
   }
 
-  public static void runInitialExperiments() {
+  public static List<ExperimentResult> runFullDatasetExperiments() {
     List<Classifier> classifiers = new ArrayList<Classifier>();
-    // classifiers.add(new LibSVM()); <-- can't find one of the dependencies online
-    // classifiers.add(new ClassificationViaRegression()); <-- doesn't work
+    List<ExperimentResult> results = new ArrayList<ExperimentResult>();
+    // classifiers.add(new LibSVM()); // can't find one of the dependencies online
+    // classifiers.add(new ClassificationViaRegression()); // doesn't work
 
-    // classifiers.add(new NaiveBayes());
-    // classifiers.add(new BayesianLogisticRegression());
-    // classifiers.add(new MLPClassifier());
-    // classifiers.add(new SGD());
-    // classifiers.add(new SMO());
-    // classifiers.add(new VotedPerceptron());
-    // classifiers.add(new AttributeSelectedClassifier());
-    // classifiers.add(new LogitBoost());
-    // classifiers.add(new DecisionStump());
-    // classifiers.add(new RandomForest());
-    // classifiers.add(new RandomTree());
-    // classifiers.add(new REPTree());
+    classifiers.add(new NaiveBayes());
+    classifiers.add(new Logistic());
+    classifiers.add(new MLPClassifier());
+    classifiers.add(new SGD());
+    classifiers.add(new SMO());
+    classifiers.add(new VotedPerceptron());
+    classifiers.add(new AttributeSelectedClassifier());
+    classifiers.add(new LogitBoost());
+    classifiers.add(new DecisionStump());
+    classifiers.add(new RandomForest());
+    classifiers.add(new RandomTree());
+    classifiers.add(new REPTree());
 
     classifiers.forEach(classifier -> {
       Evaluation eval = runCrossValidationExperiment(classifier);
       String label = classifier.getClass().getName();
-      printEvaluation(label, eval);
+
+      results.add(new ExperimentResult(eval, label));
     });
+
+    return results;
+  }
+
+  public static List<ExperimentResult> runSingleProjectTrainedExperiments() {
+    List<ExperimentResult> results = new ArrayList<ExperimentResult>();
+    Classifier classifier = new Logistic();
+
+    (new Dataset(datasetPath)).projectNames().forEach(name -> {
+      SplitDataset data = splitDatasetOnProjectName(name);
+      Evaluation eval = runExperiment(classifier, data);
+      String label = String.format(
+        "%s - trained on project '%s'",
+        classifier.getClass().getName(),
+        name
+      );
+
+      results.add(new ExperimentResult(eval, label));
+    });
+
+    return results;
   }
 
   public static SplitDataset splitDatasetOnProjectName(String projectName) {
@@ -85,6 +114,10 @@ class Experiments {
       nextTarget = instance.stringValue(0).equals(projectName) ? training : validation;
       nextTarget.add(instance);
     }
+
+    // delete project name attributes
+    training.deleteAttributeAt(0);
+    validation.deleteAttributeAt(0);
 
     return new SplitDataset(training, validation);
   }
@@ -106,11 +139,17 @@ class Experiments {
   }
 
   // evaluates the given classifier using the given training and evaluation datasets
-  public static Evaluation runExperiment(Classifier classifier, SplitDataset data) throws Exception {
-    classifier.buildClassifier(data.training);
-    Evaluation eval = new Evaluation(data.training);
-    eval.evaluateModel(classifier, data.validation);
-    return eval;
+  public static Evaluation runExperiment(Classifier classifier, SplitDataset data) {
+    try {
+      classifier.buildClassifier(data.training);
+      Evaluation eval = new Evaluation(data.training);
+      eval.evaluateModel(classifier, data.validation);
+      return eval;
+    } catch (Exception e) {
+      System.out.println("error running experiment");
+      System.out.println(e);
+      return null;
+    }
   }
 
   public static void printEvaluation(String label, Evaluation eval) {
@@ -156,6 +195,17 @@ class Experiments {
         return null;
       }
     }
+
+    public List<String> projectNames() {
+      List<String> result = new ArrayList<String>();
+
+      Enumeration<Object> e = structure.attribute(0).enumerateValues();
+      while (e.hasMoreElements()) {
+        result.add(e.nextElement().toString());
+      }
+
+      return result;
+    }
   }
 
   static class SplitDataset {
@@ -165,6 +215,24 @@ class Experiments {
     public SplitDataset(Instances training, Instances validation) {
       this.training = training;
       this.validation = validation;
+    }
+  }
+
+  static class ExperimentResult {
+    public Evaluation eval;
+    public String label;
+
+    public ExperimentResult(Evaluation eval, String label) {
+      this.eval = eval;
+      this.label = label;
+    }
+
+    void print() {
+      System.out.println(String.format(
+        "%s\n%s\n",
+        label,
+        eval.toSummaryString()
+      ));
     }
   }
 }
