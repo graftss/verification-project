@@ -4,10 +4,14 @@ import weka.core.converters.ArffLoader;
 import weka.classifiers.trees.J48;
 import weka.classifiers.Evaluation;
 import weka.classifiers.Classifier;
+import weka.classifiers.bayes.NaiveBayes;
+import weka.classifiers.bayes.BayesianLogisticRegression;
 
 import java.io.File;
 import java.util.Enumeration;
 import java.util.Random;
+import java.util.List;
+import java.util.ArrayList;
 
 class Experiments {
   static final String datasetPath = "./combined.arff";
@@ -19,16 +23,30 @@ class Experiments {
     SplitDataset data;
 
     // experiment 1: trained on Berek project, validated on the rest of the data
-    data = splitDatasetOnProjectName("Berek");
-    classifier = new J48();
-    eval = runExperiment(classifier, data);
-    printEvaluation(eval);
+    // data = splitDatasetOnProjectName("Berek");
+    // classifier = new J48();
+    // eval = runExperiment(classifier, data);
+    // printEvaluation(eval);
 
-    // experiment 2: 10-fold cross validation on entire dataset
-    classifier = new J48();
-    dataset = (new Dataset(datasetPath)).fullDataset();
-    eval = runCrossValidationExperiment(classifier, dataset);
-    printEvaluation(eval);
+    // // experiment 2: 10-fold cross validation on entire dataset
+    // classifier = new J48();
+    // eval = runCrossValidationExperiment(classifier, dataset);
+    // printEvaluation(eval);
+
+    runInitialExperiments();
+  }
+
+  public static void runInitialExperiments() {
+    List<Classifier> classifiers = new ArrayList<Classifier>();
+    classifiers.add(new NaiveBayes());
+    // classifiers.add(new LibSVM()); <-- can't find one of the dependencies online
+    classifiers.add(new BayesianLogisticRegression());
+
+    classifiers.forEach(classifier -> {
+      Evaluation eval = runCrossValidationExperiment(classifier);
+      String label = classifier.getClass().getName();
+      printEvaluation(label, eval);
+    });
   }
 
   public static SplitDataset splitDatasetOnProjectName(String projectName) {
@@ -49,10 +67,19 @@ class Experiments {
   }
 
   // evaluates the given classifier using 10 times 10-fold cross-validation
-  public static Evaluation runCrossValidationExperiment(Classifier classifier, Instances data) throws Exception {
-    Evaluation eval = new Evaluation(data);
-    eval.crossValidateModel(classifier, data, 10, new Random(1));
-    return eval;
+  public static Evaluation runCrossValidationExperiment(Classifier classifier) {
+    try {
+      Instances data = (new Dataset(datasetPath)).fullDataset();
+      // delete project name attribute
+      data.deleteAttributeAt(0);
+      Evaluation eval = new Evaluation(data);
+      eval.crossValidateModel(classifier, data, 10, new Random(1));
+      return eval;
+    } catch (Exception e) {
+      System.out.println("error running cross validation experiment");
+      System.out.println(e);
+      return null;
+    }
   }
 
   // evaluates the given classifier using the given training and evaluation datasets
@@ -63,9 +90,9 @@ class Experiments {
     return eval;
   }
 
-  public static void printEvaluation(Evaluation eval) {
-    String str = eval.toSummaryString("\nResults\n======\n", false);
-    System.out.println(str);
+  public static void printEvaluation(String label, Evaluation eval) {
+    String header = "\nResults (" + label + ")\n======\n";
+    System.out.println(eval.toSummaryString(header, false));
   }
 
   // responsible for loading and fetching instances from our ARFF dataset

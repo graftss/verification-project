@@ -1,2 +1,2 @@
-javac --class-path ./weka.jar Experiments.java
-java --class-path ./weka.jar:. Experiments
+javac -cp ~/classpath Experiments.java
+java -cp ~/classpath:. Experiments
