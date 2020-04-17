@@ -80,10 +80,12 @@ def remove_uncorrelated_metrics(dataset):
   global csv_header, csv_key_list
   uncorrelated_indices = []
   bug_counts = [int(entry[csv_key_list.index('bug')]) for entry in dataset]
+  coeffs = []
 
   for index in get_metric_indices():
     metric_values = [float(entry[index]) for entry in dataset]
     (coeff, p_value) = scipy.stats.pearsonr(metric_values, bug_counts)
+    coeffs.append('\t'.join([csv_key_list[index], str(coeff), str(p_value)]))
 
     if p_value > 0.0001:
       uncorrelated_indices.append(index)
@@ -100,6 +102,9 @@ def remove_uncorrelated_metrics(dataset):
   for index in uncorrelated_indices:
     del csv_key_list[index]
   csv_header = ','.join(csv_key_list)
+
+  for c in coeffs:
+    print(c)
 
 # writes `dataset` as a CSV into `path`
 def write_dataset(path, dataset):

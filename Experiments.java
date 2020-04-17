@@ -36,20 +36,14 @@ class Experiments {
     Instances dataset;
     SplitDataset data;
 
-    // experiment 1: trained on Berek project, validated on the rest of the data
-    // data = splitDatasetOnProjectName("Berek");
-    // classifier = new J48();
-    // eval = runExperiment(classifier, data);
-    // printEvaluation(eval);
-
-    // // experiment 2: 10-fold cross validation on entire dataset
-    // classifier = new J48();
-    // eval = runCrossValidationExperiment(classifier, dataset);
-    // printEvaluation(eval);
-
-    // results.addAll(runFullDatasetExperiments());
+    results.addAll(runFullDatasetExperiments());
     results.addAll(runSingleProjectTrainedExperiments());
 
+    printResults(results);
+  }
+
+  public static void printResults(List<ExperimentResult> results) {
+    System.out.println("Experiment\tClassifier\tTP\tFP\tFN\tTN");
     results.forEach(r -> r.print());
   }
 
@@ -74,9 +68,7 @@ class Experiments {
 
     classifiers.forEach(classifier -> {
       Evaluation eval = runCrossValidationExperiment(classifier);
-      String label = classifier.getClass().getName();
-
-      results.add(new ExperimentResult(eval, label));
+      results.add(new ExperimentResult(eval, classifier, "10-fold cross validation"));
     });
 
     return results;
@@ -89,13 +81,9 @@ class Experiments {
     (new Dataset(datasetPath)).projectNames().forEach(name -> {
       SplitDataset data = splitDatasetOnProjectName(name);
       Evaluation eval = runExperiment(classifier, data);
-      String label = String.format(
-        "%s - trained on project '%s'",
-        classifier.getClass().getName(),
-        name
-      );
+      String label = String.format("Trained on %s", name);
 
-      results.add(new ExperimentResult(eval, label));
+      results.add(new ExperimentResult(eval, classifier, label));
     });
 
     return results;
@@ -152,11 +140,6 @@ class Experiments {
       System.out.println(e);
       return null;
     }
-  }
-
-  public static void printEvaluation(String label, Evaluation eval) {
-    String header = "\nResults (" + label + ")\n======\n";
-    System.out.println(eval.toSummaryString(header, false));
   }
 
   // responsible for loading and fetching instances from our ARFF dataset
@@ -222,18 +205,37 @@ class Experiments {
 
   static class ExperimentResult {
     public Evaluation eval;
+    public Classifier classifier;
     public String label;
 
-    public ExperimentResult(Evaluation eval, String label) {
+    public ExperimentResult(Evaluation eval, Classifier classifier, String label) {
       this.eval = eval;
+      this.classifier = classifier;
       this.label = label;
     }
 
-    void print() {
+    public String evalString() {
+      double[][] m = eval.confusionMatrix();
+      double tp = m[0][0];
+      double fp = m[0][1];
+      double fn = m[1][0];
+      double tn = m[1][1];
+
+      return String.format(
+        "%d\t%d\t%d\t%d",
+        (int)m[0][0], // true positives
+        (int)m[0][1], // false positives
+        (int)m[1][0], // false negatives
+        (int)m[1][1] // true negatives
+      );
+    }
+
+    public void print() {
       System.out.println(String.format(
-        "%s\n%s\n",
+        "%s\t%s\t%s\t",
         label,
-        eval.toSummaryString()
+        classifier.getClass().getName(),
+        evalString()
       ));
     }
   }
