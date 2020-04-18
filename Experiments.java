@@ -43,7 +43,7 @@ class Experiments {
   }
 
   public static void printResults(List<ExperimentResult> results) {
-    System.out.println("Experiment\tClassifier\tTP\tFP\tFN\tTN");
+    System.out.println("Experiment\tClassifier\tTP\tFN\tFP\tTN");
     results.forEach(r -> r.print());
   }
 
@@ -224,15 +224,15 @@ class Experiments {
       return String.format(
         "%d\t%d\t%d\t%d",
         (int)m[0][0], // true positives
-        (int)m[0][1], // false positives
-        (int)m[1][0], // false negatives
+        (int)m[0][1], // false negatives
+        (int)m[1][0], // false positives
         (int)m[1][1] // true negatives
       );
     }
 
     public void print() {
       System.out.println(String.format(
-        "%s\t%s\t%s\t",
+        "%s\t%s\t%s",
         label,
         classifier.getClass().getName(),
         evalString()
